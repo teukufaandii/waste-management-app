@@ -35,7 +35,7 @@ import {
   getUserByEmail,
   markNotificationAsRead,
 } from "@/utils/db/action";
-// import {useMediaQuery} from ''
+import { useMediaQuery } from "../hooks/useMediaQuery";
 
 const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "";
 
@@ -72,6 +72,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   const pathName = usePathname();
   const [notification, setNotification] = useState<Notification[]>([]);
   const [balance, setBalance] = useState(0);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
     const init = async () => {
@@ -219,8 +220,31 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
             className="mr-2 md:mr-4"
             onClick={onMenuClick}
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-6 w-6 text-gray-800" />
           </Button>
+          <Link href="/" className="flex items-center">
+            <Leaf className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-1 md:mr-2" />
+            <span className="font-bold text-base md:text-lg text-gray-800">
+              ZeroWaste
+            </span>
+          </Link>
+        </div>
+
+        {!isMobile && (
+          <div className="flex-1 max-w-xl mx-4">
+            <div className="relative">
+              <input type="text" placeholder="search..." className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500" />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            </div>
+          </div>
+        )}
+        <div className="flex items-center">
+          {isMobile && (
+            <Button variant="ghost" size="icon" className="mr-2">
+              <Search className="h-5 w-5" />
+            </Button>
+          )}
+          <DropdownMenu></DropdownMenu>
         </div>
       </div>
     </header>
