@@ -1,3 +1,4 @@
+//@ts-nocheck
 "use client";
 
 import { useState, useEffect } from "react";
@@ -42,20 +43,20 @@ const clientId = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "";
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
   chainId: "0xaa36a7",
-  rpcTarget: "https://rpc.ankr.com/eth_goerli",
-  displayName: "Sepolia Testnet",
-  blockExplorer: "https://sepolia.etherscan.io/",
+  rpcTarget: "https://rpc.ankr.com/eth_sepolia",
+  displayName: "Ethereum Sepolia Testnet",
+  blockExplorerUrl: "https://sepolia.etherscan.io",
   ticker: "ETH",
   tickerName: "Ethereum",
-  logo: "https://assets.web3auth.io/evm-chains/sepolia.png",
+  logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
 };
 
 const privateKeyProvider = new EthereumPrivateKeyProvider({
   config: { chainConfig },
 });
-const web3Auth = new Web3Auth({
+const web3auth = new Web3Auth({
   clientId,
-  web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET,
+  web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
   privateKeyProvider,
 });
 
@@ -77,12 +78,12 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   useEffect(() => {
     const init = async () => {
       try {
-        await web3Auth.initModal();
-        setProvider(web3Auth.provider);
+        await web3auth.initModal();
+        setProvider(web3auth.provider);
 
-        if (web3Auth.connected) {
+        if (web3auth.connected) {
           setLoggedIn(true);
-          const user = await web3Auth.getUserInfo();
+          const user = await web3auth.getUserInfo();
           setUserInfo(user);
           if (user.email) {
             localStorage.setItem("userEmail", user.email);
@@ -90,6 +91,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
               await createUser(user.email, user.name || "Anonymous User");
             } catch (error) {
               console.error("Error creating user:", error);
+              // Handle the error appropriately, maybe show a message to the user
             }
           }
         }
@@ -99,6 +101,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
         setLoading(false);
       }
     };
+
     init();
   }, []);
 
@@ -123,8 +126,8 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
       if (userInfo && userInfo.email) {
         const user = await getUserByEmail(userInfo.email);
         if (user) {
-          const userBalance = getUserBalance(user.id);
-          setBalance(userBalance);
+          const userBalance = await getUserBalance(user.id); // Ensure this returns a number
+          setBalance(Number(userBalance) || 0); // Convert to a number and fallback to 0 if invalid
         }
       }
     };
@@ -146,16 +149,16 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
     );
   }, [userInfo]);
 
-  const handleLogin = async () => {
-    if (!web3Auth) {
+  const login = async () => {
+    if (!web3auth) {
       console.error("Web3Auth not initialized");
       return;
     }
     try {
-      const web3authProvider = await web3Auth.connect();
+      const web3authProvider = await web3auth.connect();
       setProvider(web3authProvider);
       setLoggedIn(true);
-      const user = await web3Auth.getUserInfo();
+      const user = await web3auth.getUserInfo();
       setUserInfo(user);
       if (user.email) {
         localStorage.setItem("userEmail", user.email);
@@ -171,12 +174,12 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   };
 
   const logout = async () => {
-    if (!web3Auth) {
+    if (!web3auth) {
       console.error("Web3Auth not initialized");
       return;
     }
     try {
-      await web3Auth.logout();
+      await web3auth.logout();
       setProvider(null);
       setLoggedIn(false);
       setUserInfo(null);
@@ -187,8 +190,8 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   };
 
   const getUserInfo = async () => {
-    if (web3Auth.connected) {
-      const user = await web3Auth.getUserInfo();
+    if (web3auth.connected) {
+      const user = await web3auth.getUserInfo();
       setUserInfo(user);
 
       if (user.email) {
@@ -233,7 +236,11 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
         {!isMobile && (
           <div className="flex-1 max-w-xl mx-4">
             <div className="relative">
-              <input type="text" placeholder="search..." className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500" />
+              <input
+                type="text"
+                placeholder="search..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             </div>
           </div>
@@ -244,7 +251,74 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
               <Search className="h-5 w-5" />
             </Button>
           )}
-          <DropdownMenu></DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="mr-2 relative">
+                <Bell className="h-5 w-5 text-gray-800" />
+                {notification.length > 0 && (
+                  <Badge className="absolute -top-1 -right-1 px-1 min-w-[1.2rem] h-5">
+                    {notification.length}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              {notification.length > 0 ? (
+                notification.map((notification: any) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification.id)}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{notification.type}</span>
+                      <span className="text-sm text-gray-500">
+                        {notification.message}
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem>No New Notification</DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="mr-2 md:mr-4 flex items-center bg-gray-100 rounded-full px-2 md:px-3 py-1">
+            <Coins className="h-4 w-4 md:h-5 md:w-5 mr-1 text-green-500" />
+            <span className="font-semibold text-sm md:text-base text-gray-800">
+              {Number(balance).toFixed(2)}
+            </span>
+          </div>
+          {!loggedIn ? (
+            <Button
+              onClick={login}
+              className="bg-green-600 hover:bg-green-700 text-white test-sm md:text-base"
+            >
+              Login
+              <LogIn className="ml-1 md:ml-2 h-4 w-4 md:h-5 md:w-5"></LogIn>
+            </Button>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="flex items-center"
+                >
+                  <User className="h-5 w-5 mr-1" />
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={getUserInfo}>
+                  {userInfo ? userInfo.name : "Profile"}
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Link href="/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>Sign Out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>
