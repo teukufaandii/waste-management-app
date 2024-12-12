@@ -9,14 +9,15 @@ import "./globals.css";
 
 import { Toaster } from "react-hot-toast";
 import Header from "@/components/Header";
+import Sidebar from "@/components/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const [sidebarOPen, setSidebarOpen] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
 
@@ -25,9 +26,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50 flex flex-col">
           {/* Header */}
-          <Header onMenuClick={() => setSidebarOpen(!sidebarOPen)} totalEarnings={(totalEarnings)} />
+          <Header
+            onMenuClick={() => setSidebarOpen(!sidebarOPen)}
+            totalEarnings={totalEarnings}
+          />
           <div className="flex flex-1">
             {/* Sidebar */}
+            <Sidebar open={sidebarOPen} />
             <main className="flex-1 p-4 lg:p-8 ml-0 lg:ml-64 transition-all duration-300">
               {children}
             </main>

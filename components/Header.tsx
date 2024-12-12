@@ -228,7 +228,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
           <Link href="/" className="flex items-center">
             <Leaf className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-1 md:mr-2" />
             <span className="font-bold text-base md:text-lg text-gray-800">
-              ZeroWaste
+              WasteX
             </span>
           </Link>
         </div>
